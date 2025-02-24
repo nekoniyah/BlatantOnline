@@ -1,10 +1,4 @@
-export type HexTile = {
-	id: string;
-	q: number; // Axial coordinate (horizontal)
-	r: number; // Axial coordinate (vertical)
-	color: string; // CSS class name
-	icon?: string; // Optional icon reference
-};
+import type { HexTile } from '../types/game';
 
 export const boardData: HexTile[] = [
 	// Col 1
