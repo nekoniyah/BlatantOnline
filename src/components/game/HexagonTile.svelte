@@ -3,6 +3,7 @@
 	import TileIcon from './TileIcon.svelte';
 	import Pawn from './Pawn.svelte';
 	import { pawns, selectedPawn } from '../../stores/pawnStore';
+	import { boardData } from '$lib/boardData';
 
 	export let tile: HexTile;
 
@@ -17,30 +18,91 @@
 		};
 	}
 
-	// Check if move is valid (adjust rules as needed)
+	// Add these helper functions at the top of the script section
+	function getNeighbors(q: number, r: number): [number, number][] {
+		// All possible neighbors for a hex tile
+		const directions = [
+			[1, 0],
+			[1, -1],
+			[0, -1],
+			[-1, 0],
+			[-1, 1],
+			[0, 1]
+		];
+
+		// If we're on an odd row, we need to shift the coordinates
+		const oddRow = r % 2;
+		return directions.map(([dq, dr]) => [q + dq + (oddRow ? 0 : dr < 0 ? -1 : 0), r + dr]);
+	}
+
+	// Breadth-first search to find valid paths
+	function findPath(start: [number, number], end: [number, number], maxSteps: number = 3): boolean {
+		const queue: Array<{ pos: [number, number]; steps: number }> = [{ pos: start, steps: 0 }];
+		const visited = new Set<string>();
+
+		while (queue.length > 0) {
+			const current = queue.shift()!;
+			const [currentQ, currentR] = current.pos;
+			const key = `${currentQ},${currentR}`;
+
+			if (visited.has(key)) continue;
+			visited.add(key);
+
+			// Found the target
+			if (currentQ === end[0] && currentR === end[1]) {
+				return true;
+			}
+
+			// Don't explore further if we've reached max steps
+			if (current.steps >= maxSteps) continue;
+
+			// Get all valid neighbors
+			const neighbors = getNeighbors(currentQ, currentR);
+			for (const neighbor of neighbors) {
+				const [nq, nr] = neighbor;
+
+				// Find the tile in boardData
+				const neighborTile = boardData.find((t) => t.q === nq && t.r === nr);
+
+				// Skip if the neighbor is a wall or doesn't exist
+				if (!neighborTile || neighborTile.color === 'black') continue;
+
+				queue.push({
+					pos: [nq, nr],
+					steps: current.steps + 1
+				});
+			}
+		}
+
+		return false;
+	}
+
+	// Update the isValidMove function
 	function isValidMove(from: [number, number], to: [number, number]): boolean {
-		const [fromQ, fromR] = from;
-		const [toQ, toR] = to;
+		// Check if the target tile is valid
+		if (tile.color === 'black') return false;
 
-		// Simple rule: can only move to adjacent tiles
-		const dQ = Math.abs(fromQ - toQ);
-		const dR = Math.abs(fromR - toR);
-
-		return dQ <= 1 && dR <= 1 && tile.color !== 'black';
+		// Check if the move is within range and has a valid path
+		return findPath(from, to, 3);
 	}
 
 	function handleTileClick() {
-		if ($selectedPawn && isValidMove($selectedPawn.position, [tile.q, tile.r])) {
-			pawns.set(
-				$pawns.map((p) => {
-					if (p.id === $selectedPawn.id) {
-						return { ...p, position: [tile.q, tile.r] };
-					}
-					return p;
-				})
+		if (!$selectedPawn) return;
+
+		const targetPos: [number, number] = [tile.q, tile.r];
+
+		// Don't allow moving to the same position
+		if ($selectedPawn.position[0] === targetPos[0] && $selectedPawn.position[1] === targetPos[1]) {
+			return;
+		}
+
+		// Check if the move is valid
+		if (isValidMove($selectedPawn.position, targetPos)) {
+			pawns.update((pawns) =>
+				pawns.map((p) => (p.id === $selectedPawn.id ? { ...p, position: targetPos } : p))
 			);
 
-			// selectedPawn.set(null);
+			selectedPawn.set(null);
 		}
 	}
 
@@ -92,8 +154,7 @@
 		}
 
 		&.valid-move {
-			stroke: #4caf50;
-			stroke-width: 2;
+			stroke-width: 1.5;
 			opacity: 0.8;
 		}
 	}
