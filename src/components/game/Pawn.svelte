@@ -16,7 +16,10 @@
 
 	function handleClick() {
 		// Check if the current player can move this pawn
-		if (gameActions.canMovePawn(currentPlayerName, pawn.player as any)) {
+
+		if ($selectedPawn === pawn) {
+			selectedPawn.set(null);
+		} else if (gameActions.canMovePawn(currentPlayerName, pawn.player as any)) {
 			selectedPawn.set(pawn);
 		}
 	}

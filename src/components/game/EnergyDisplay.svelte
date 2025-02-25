@@ -1,6 +1,7 @@
 <!-- src/components/game/EnergyDisplay.svelte -->
 <script lang="ts">
 	import { gameActions, gameStore } from '../../stores/gameStore';
+	import { selectedPawn } from '../../stores/pawnStore';
 
 	let currentPlayerEnergy = 0;
 	let currentPlayerName = '';
@@ -13,6 +14,7 @@
 	});
 
 	function endTurn() {
+		selectedPawn.set(null);
 		gameActions.endTurn();
 	}
 </script>
