@@ -4,10 +4,11 @@
 	import Pawn from './Pawn.svelte';
 	import { pawns, selectedPawn } from '../../stores/pawnStore';
 	import { boardData } from '$lib/boardData';
+	import { gameStore } from '../../stores/gameStore';
 
 	export let tile: HexTile;
 
-	const hexSize = 10;
+	const hexSize = 30;
 	const hexWidth = Math.sqrt(3) * hexSize;
 	const hexHeight = 2 * hexSize * 0.75;
 
@@ -20,19 +21,28 @@
 
 	// Add these helper functions at the top of the script section
 	function getNeighbors(q: number, r: number): [number, number][] {
-		// All possible neighbors for a hex tile
-		const directions = [
-			[1, 0],
-			[1, -1],
-			[0, -1],
-			[-1, 0],
-			[-1, 1],
-			[0, 1]
-		];
+		const evenRow = r % 2 === 0;
 
-		// If we're on an odd row, we need to shift the coordinates
-		const oddRow = r % 2;
-		return directions.map(([dq, dr]) => [q + dq + (oddRow ? 0 : dr < 0 ? -1 : 0), r + dr]);
+		// Proper axial offsets for staggered rows
+		const directions = evenRow
+			? [
+					[1, 0],
+					[0, -1],
+					[-1, -1],
+					[-1, 0],
+					[-1, 1],
+					[0, 1]
+				] // Even rows shift left
+			: [
+					[1, 0],
+					[1, -1],
+					[0, -1],
+					[-1, 0],
+					[0, 1],
+					[1, 1]
+				]; // Odd rows shift right
+
+		return directions.map(([dq, dr]) => [q + dq, r + dr]);
 	}
 
 	// Breadth-first search to find valid paths
@@ -82,8 +92,56 @@
 		// Check if the target tile is valid
 		if (tile.color === 'black') return false;
 
+		let forcedLine = $gameStore.players[$gameStore.currentPlayer].forcedLine;
 		// Check if the move is within range and has a valid path
-		return findPath(from, to, 3);
+		return forcedLine
+			? findStraightPath(from, to)
+			: findPath(from, to, $gameStore.players[$gameStore.currentPlayer].remainingMoves);
+	}
+
+	function findStraightPath(
+		start: [number, number],
+		end: [number, number],
+		maxSteps: number = 3
+	): boolean {
+		const [q1, r1] = start;
+		const [q2, r2] = end;
+
+		const path = [];
+
+		// Determine direction
+		const dq = q2 - q1;
+		const dr = r2 - r1;
+
+		// Check if the move is in a straight line
+		if (dq !== 0 && dr !== 0 && Math.abs(dq) !== Math.abs(dr)) {
+			return false;
+		}
+
+		// Number of steps to reach the destination
+
+		// Calculate step increments
+		const stepQ = dq === 0 ? 0 : dq / maxSteps;
+		const stepR = dr === 0 ? 0 : dr / maxSteps;
+
+		// Step through each hex in the line
+		for (let i = 1; i <= maxSteps; i++) {
+			const currentQ = q1 + stepQ * i;
+			const currentR = r1 + stepR * i;
+
+			// Ensure the hex is on the board and not blocked
+			const tile = boardData.find((t) => t.q === currentQ && t.r === currentR);
+			if (!tile || tile.color === 'black') return false; // Blocked or out of bounds
+
+			path.push({ q: currentQ, r: currentR });
+		}
+
+		// Check if the path is valid
+		return findPath(start, end, $gameStore.players[$gameStore.currentPlayer].remainingMoves);
+	}
+
+	function axialDistance(a: { q: number; r: number }, b: { q: number; r: number }): number {
+		return (Math.abs(a.q - b.q) + Math.abs(a.r - b.r) + Math.abs(-a.q - a.r - (-b.q - b.r))) / 2;
 	}
 
 	function handleTileClick() {
@@ -98,6 +156,26 @@
 
 		// Check if the move is valid
 		if (isValidMove($selectedPawn.position, targetPos)) {
+			let diff = axialDistance(
+				{ q: $selectedPawn.position[0], r: $selectedPawn.position[1] },
+				{ q: targetPos[0], r: targetPos[1] }
+			);
+
+			gameStore.update((state) => {
+				state.players = state.players.map((player, i) => {
+					if (i === state.currentPlayer) {
+						player.remainingMoves -= Math.abs(diff);
+
+						return player;
+					}
+					return player;
+				});
+
+				return {
+					...state
+				};
+			});
+
 			pawns.update((pawns) =>
 				pawns.map((p) => (p.id === $selectedPawn.id ? { ...p, position: targetPos } : p))
 			);
@@ -134,7 +212,7 @@
 			<TileIcon hex={tile} />
 		{/if}
 		{#if currentPawn}
-			<Pawn pawn={currentPawn} {tile} />
+			<Pawn pawn={currentPawn} />
 		{/if}
 	</g>
 {/await}
@@ -154,7 +232,7 @@
 		}
 
 		&.valid-move {
-			stroke-width: 1.5;
+			stroke-width: 3;
 			opacity: 0.8;
 		}
 	}

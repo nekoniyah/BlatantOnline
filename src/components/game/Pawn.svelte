@@ -1,12 +1,24 @@
+<!-- src/components/game/Pawn.svelte -->
 <script lang="ts">
 	import type { HexTile, Pawn } from '../../types/game';
 	import { selectedPawn } from '../../stores/pawnStore';
+	import { gameStore, gameActions } from '../../stores/gameStore';
 
 	export let pawn: Pawn;
-	export let tile: HexTile;
+
+	// Subscribe to the game store to get current player
+	let currentPlayerName = '';
+	gameStore.subscribe((state) => {
+		if (state.players.length > 0) {
+			currentPlayerName = state.players[state.currentPlayer].name;
+		}
+	});
 
 	function handleClick() {
-		selectedPawn.set(pawn);
+		// Check if the current player can move this pawn
+		if (gameActions.canMovePawn(currentPlayerName, pawn.player as any)) {
+			selectedPawn.set(pawn);
+		}
 	}
 </script>
 
@@ -14,7 +26,7 @@
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <circle
 	class="pawn {pawn.player}{$selectedPawn?.id === pawn.id ? ' selected' : ''}"
-	r="7"
+	r="18"
 	on:click={handleClick}
 />
 
@@ -32,6 +44,14 @@
 
 	.pawn.blue {
 		fill: #4444ff;
+	}
+
+	.pawn.violet {
+		fill: #9944ff;
+	}
+
+	.pawn.green {
+		fill: #44ff44;
 	}
 
 	.pawn.selected {
