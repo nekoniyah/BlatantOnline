@@ -1,21 +1,11 @@
-<!-- src/routes/+page.svelte -->
+<!--
+  @component Main Page
+  @description The root page component that sets up the basic layout and global styles.
+  It includes the navigation bar and defines global CSS reset and typography rules.
+-->
 <script>
 	import Navbar from '../components/common/Navbar.svelte';
+	import '../styles/global.css';
 </script>
 
 <Navbar />
-
-<style>
-	:global(*) {
-		box-sizing: border-box;
-		margin: 0;
-		padding: 0;
-	}
-
-	:global(body) {
-		font-family:
-			-apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans',
-			'Helvetica Neue', sans-serif;
-		line-height: 1.6;
-	}
-</style>

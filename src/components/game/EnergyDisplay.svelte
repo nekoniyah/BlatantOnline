@@ -4,19 +4,21 @@
 	import { selectedPawn } from '../../stores/pawnStore';
 	import { socket } from '../../stores/socket';
 
-	let currentPlayerEnergy = 0;
+	export let value: number;
+
 	let currentPlayerName = '';
 
-	if ($gameStore.players.length > 0) {
-		currentPlayerName = $gameStore.players[$gameStore.currentPlayer].name;
-		currentPlayerEnergy = $gameStore.players[$gameStore.currentPlayer].energy;
+	$: if ($gameStore && $gameStore.players && $gameStore.players.length > 0) {
+		currentPlayerName = $gameStore.players[$gameStore.currentPlayer]?.name || '';
+		value = $gameStore.players[$gameStore.currentPlayer]?.energy || 0;
 	}
 
 	function endTurn() {
 		selectedPawn.set(null);
-		$socket!.emit('end_turn', currentPlayerName);
+		$socket?.emit('end_turn', currentPlayerName);
 
 		gameStore.update((state) => {
+			if (!state) return state;
 			state.currentPlayer = state.currentPlayer === 0 ? 1 : 0;
 			return state;
 		});
@@ -28,7 +30,7 @@
 		<button class="end-turn-btn" on:click={endTurn}>End Turn</button>
 		<div class="energy">
 			<img src="/bolt.svg" alt="Energy" width="20" height="20" />
-			<span>Energy: {currentPlayerEnergy}</span>
+			<span>Energy: {value}</span>
 		</div>
 	</div>
 {/if}

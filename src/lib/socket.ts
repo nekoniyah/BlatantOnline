@@ -1,22 +1,12 @@
 import { io } from 'socket.io-client';
 import { env } from '$env/dynamic/public';
 
-export function socket() {
-	let token = localStorage.getItem('token');
-
-	if (!token) {
-		localStorage.setItem(
-			'token',
-			Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15)
-		);
-		token = localStorage.getItem('token');
-	}
-
-	let s = io(env.PUBLIC_SERVER_URL || 'http://localhost:3000', {
-		auth: {
-			token
-		}
+export const socket = () => {
+	return io('http://localhost:3001', {
+		transports: ['websocket'],
+		autoConnect: true,
+		reconnection: true,
+		reconnectionAttempts: 5,
+		reconnectionDelay: 1000
 	});
-
-	return s;
-}
+};

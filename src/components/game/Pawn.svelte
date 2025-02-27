@@ -1,4 +1,11 @@
 <!-- src/components/game/Pawn.svelte -->
+<!--
+  @component Pawn
+  @description A component that represents a player's pawn on the game board.
+  Handles pawn selection, turn validation, and visual feedback for player interaction.
+  
+  @prop {Pawn} pawn - The pawn object containing player and position information
+-->
 <script lang="ts">
 	import type { Pawn } from '../../types/game';
 	import { selectedPawn } from '../../stores/pawnStore';
@@ -7,7 +14,7 @@
 
 	export let pawn: Pawn;
 
-	// Subscribe to the game store to get current player
+	// Track the current player's name from game state
 	let currentPlayerName = '';
 	gameStore.subscribe((state) => {
 		if (!state) return;
@@ -17,9 +24,12 @@
 		}
 	});
 
+	/**
+	 * Handles pawn selection/deselection when clicked
+	 * If the pawn is already selected, deselects it
+	 * Otherwise, validates turn and selects the pawn if valid
+	 */
 	function handleClick() {
-		// Check if the current player can move this pawn
-
 		if ($selectedPawn === pawn) {
 			selectedPawn.set(null);
 		} else {
@@ -31,6 +41,7 @@
 </script>
 
 {#if $socket}
+	<!-- Accessibility exceptions for game interaction -->
 	<!-- svelte-ignore a11y_click_events_have_key_events -->
 	<!-- svelte-ignore a11y_no_static_element_interactions -->
 	<circle
@@ -45,6 +56,7 @@
 {/if}
 
 <style>
+	/* Base pawn styling */
 	.pawn {
 		stroke: black;
 		stroke-width: 1;
@@ -52,27 +64,27 @@
 		transition: all 0.2s ease;
 	}
 
+	/* Player-specific colors */
 	.pawn.red {
 		fill: #ff4444;
 	}
-
 	.pawn.blue {
 		fill: #4444ff;
 	}
-
 	.pawn.violet {
 		fill: #9944ff;
 	}
-
 	.pawn.green {
 		fill: #44ff44;
 	}
 
+	/* Selected state styling */
 	.pawn.selected {
 		stroke-width: 2;
 		r: 8;
 	}
 
+	/* Hover effect */
 	.pawn:hover {
 		filter: brightness(1.2);
 	}
