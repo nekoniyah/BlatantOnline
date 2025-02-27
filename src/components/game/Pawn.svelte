@@ -1,14 +1,17 @@
 <!-- src/components/game/Pawn.svelte -->
 <script lang="ts">
-	import type { HexTile, Pawn } from '../../types/game';
+	import type { Pawn } from '../../types/game';
 	import { selectedPawn } from '../../stores/pawnStore';
-	import { gameStore, gameActions } from '../../stores/gameStore';
+	import { gameStore } from '../../stores/gameStore';
+	import { socket } from '../../stores/socket';
 
 	export let pawn: Pawn;
 
 	// Subscribe to the game store to get current player
 	let currentPlayerName = '';
 	gameStore.subscribe((state) => {
+		if (!state) return;
+
 		if (state.players.length > 0) {
 			currentPlayerName = state.players[state.currentPlayer].name;
 		}
@@ -19,19 +22,27 @@
 
 		if ($selectedPawn === pawn) {
 			selectedPawn.set(null);
-		} else if (gameActions.canMovePawn(currentPlayerName, pawn.player as any)) {
-			selectedPawn.set(pawn);
+		} else {
+			$socket!.emit('check_turn', currentPlayerName, pawn.player, () => {
+				selectedPawn.set(pawn);
+			});
 		}
 	}
 </script>
 
-<!-- svelte-ignore a11y_click_events_have_key_events -->
-<!-- svelte-ignore a11y_no_static_element_interactions -->
-<circle
-	class="pawn {pawn.player}{$selectedPawn?.id === pawn.id ? ' selected' : ''}"
-	r="18"
-	on:click={handleClick}
-/>
+{#if $socket}
+	<!-- svelte-ignore a11y_click_events_have_key_events -->
+	<!-- svelte-ignore a11y_no_static_element_interactions -->
+	<circle
+		class="pawn {pawn.player}{$selectedPawn
+			? $selectedPawn.id === pawn.id
+				? ' selected'
+				: ''
+			: ''}"
+		r="18"
+		on:click={handleClick}
+	/>
+{/if}
 
 <style>
 	.pawn {

@@ -1,39 +1,38 @@
-<!-- src/components/game/Card.svelte -->
 <script lang="ts">
-	import { Card } from '$lib/lib';
+	// import { Card } from '$lib/lib';
 	import { gameStore } from '../../stores/gameStore';
 
-	export let card: Card;
+	export let card: any;
 	export let index: number;
 
 	function playCard() {
-		gameStore.update((state) => {
-			const currentPlayer = state.players[state.currentPlayer];
-			if (
-				currentPlayer.playCard(index, state, () => {
-					// Callback after card effect is applied
-					console.log(`Card ${card.name} played successfully`);
-				})
-			) {
-				// Card played successfully
-			} else {
-				alert('Not enough energy to play this card!');
-			}
-			return state;
-		});
+		// gameStore.update((state) => {
+		// 	const currentPlayer = state.players[state.currentPlayer];
+		// 	if (
+		// 		currentPlayer.playCard(index, state, () => {
+		// 			// Callback after card effect is applied
+		// 			console.log(`Card ${card.name} played successfully`);
+		// 		})
+		// 	) {
+		// 		// Card played successfully
+		// 	} else {
+		// 		alert('Not enough energy to play this card!');
+		// 	}
+		// 	return state;
+		// });
 	}
 </script>
 
 <!-- svelte-ignore a11y_no_static_element_interactions -->
 <!-- svelte-ignore a11y_click_events_have_key_events -->
 <div class="card" on:click={playCard}>
-	<div class="card-header">
+	<!-- <div class="card-header">
 		<h3>{card.name}</h3>
 		<span class="cost">{card.cost}</span>
 	</div>
 	<div class="card-body">
 		<img src={card.image} alt="" />
-	</div>
+	</div> -->
 </div>
 
 <style>

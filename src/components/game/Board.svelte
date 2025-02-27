@@ -1,9 +1,6 @@
 <script lang="ts">
 	import { boardData } from '$lib/boardData';
-	import { gameActions } from '../../stores/gameStore';
 	import HexagonTile from './HexagonTile.svelte';
-
-	gameActions.initGame(['Player 1', 'Player 2']);
 </script>
 
 <svg class="board" viewBox="-100 -100 1000 1000">

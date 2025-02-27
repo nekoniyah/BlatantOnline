@@ -3,8 +3,7 @@
 	import TileIcon from './TileIcon.svelte';
 	import Pawn from './Pawn.svelte';
 	import { pawns, selectedPawn } from '../../stores/pawnStore';
-	import { boardData } from '$lib/boardData';
-	import { gameStore } from '../../stores/gameStore';
+	import { socket } from '../../stores/socket';
 
 	export let tile: HexTile;
 
@@ -19,129 +18,12 @@
 		};
 	}
 
-	// Add these helper functions at the top of the script section
-	function getNeighbors(q: number, r: number): [number, number][] {
-		const evenRow = r % 2 === 0;
+	let validMove: boolean = false;
 
-		// Proper axial offsets for staggered rows
-		const directions = evenRow
-			? [
-					[1, 0],
-					[0, -1],
-					[-1, -1],
-					[-1, 0],
-					[-1, 1],
-					[0, 1]
-				] // Even rows shift left
-			: [
-					[1, 0],
-					[1, -1],
-					[0, -1],
-					[-1, 0],
-					[0, 1],
-					[1, 1]
-				]; // Odd rows shift right
-
-		return directions.map(([dq, dr]) => [q + dq, r + dr]);
-	}
-
-	// Breadth-first search to find valid paths
-	function findPath(start: [number, number], end: [number, number], maxSteps: number = 3): boolean {
-		const queue: Array<{ pos: [number, number]; steps: number }> = [{ pos: start, steps: 0 }];
-		const visited = new Set<string>();
-
-		while (queue.length > 0) {
-			const current = queue.shift()!;
-			const [currentQ, currentR] = current.pos;
-			const key = `${currentQ},${currentR}`;
-
-			if (visited.has(key)) continue;
-			visited.add(key);
-
-			// Found the target
-			if (currentQ === end[0] && currentR === end[1]) {
-				return true;
-			}
-
-			// Don't explore further if we've reached max steps
-			if (current.steps >= maxSteps) continue;
-
-			// Get all valid neighbors
-			const neighbors = getNeighbors(currentQ, currentR);
-			for (const neighbor of neighbors) {
-				const [nq, nr] = neighbor;
-
-				// Find the tile in boardData
-				const neighborTile = boardData.find((t) => t.q === nq && t.r === nr);
-
-				// Skip if the neighbor is a wall or doesn't exist
-				if (!neighborTile || neighborTile.color === 'black') continue;
-
-				queue.push({
-					pos: [nq, nr],
-					steps: current.steps + 1
-				});
-			}
-		}
-
-		return false;
-	}
-
-	// Update the isValidMove function
-	function isValidMove(from: [number, number], to: [number, number]): boolean {
-		// Check if the target tile is valid
-		if (tile.color === 'black') return false;
-
-		let forcedLine = $gameStore.players[$gameStore.currentPlayer].forcedLine;
-		// Check if the move is within range and has a valid path
-		return forcedLine
-			? findStraightPath(from, to)
-			: findPath(from, to, $gameStore.players[$gameStore.currentPlayer].remainingMoves);
-	}
-
-	function findStraightPath(
-		start: [number, number],
-		end: [number, number],
-		maxSteps: number = 3
-	): boolean {
-		const [q1, r1] = start;
-		const [q2, r2] = end;
-
-		const path = [];
-
-		// Determine direction
-		const dq = q2 - q1;
-		const dr = r2 - r1;
-
-		// Check if the move is in a straight line
-		if (dq !== 0 && dr !== 0 && Math.abs(dq) !== Math.abs(dr)) {
-			return false;
-		}
-
-		// Number of steps to reach the destination
-
-		// Calculate step increments
-		const stepQ = dq === 0 ? 0 : dq / maxSteps;
-		const stepR = dr === 0 ? 0 : dr / maxSteps;
-
-		// Step through each hex in the line
-		for (let i = 1; i <= maxSteps; i++) {
-			const currentQ = q1 + stepQ * i;
-			const currentR = r1 + stepR * i;
-
-			// Ensure the hex is on the board and not blocked
-			const tile = boardData.find((t) => t.q === currentQ && t.r === currentR);
-			if (!tile || tile.color === 'black') return false; // Blocked or out of bounds
-
-			path.push({ q: currentQ, r: currentR });
-		}
-
-		// Check if the path is valid
-		return findPath(start, end, $gameStore.players[$gameStore.currentPlayer].remainingMoves);
-	}
-
-	function axialDistance(a: { q: number; r: number }, b: { q: number; r: number }): number {
-		return (Math.abs(a.q - b.q) + Math.abs(a.r - b.r) + Math.abs(-a.q - a.r - (-b.q - b.r))) / 2;
+	function isValidMove(pawnPos: [number, number], targetPos: [number, number]) {
+		$socket!.emit('check_valid_move', pawnPos, targetPos, (isValid: boolean) => {
+			validMove = isValid;
+		});
 	}
 
 	function handleTileClick() {
@@ -149,73 +31,51 @@
 
 		const targetPos: [number, number] = [tile.q, tile.r];
 
-		// Don't allow moving to the same position
 		if ($selectedPawn.position[0] === targetPos[0] && $selectedPawn.position[1] === targetPos[1]) {
 			return;
 		}
 
-		// Check if the move is valid
-		if (isValidMove($selectedPawn.position, targetPos)) {
-			let diff = axialDistance(
-				{ q: $selectedPawn.position[0], r: $selectedPawn.position[1] },
-				{ q: targetPos[0], r: targetPos[1] }
-			);
-
-			gameStore.update((state) => {
-				state.players = state.players.map((player, i) => {
-					if (i === state.currentPlayer) {
-						player.remainingMoves -= Math.abs(diff);
-
-						return player;
-					}
-					return player;
-				});
-
-				return {
-					...state
-				};
-			});
-
-			pawns.update((pawns) =>
-				pawns.map((p) => (p.id === $selectedPawn.id ? { ...p, position: targetPos } : p))
-			);
-
-			selectedPawn.set(null);
-		}
+		$socket!.emit('move', {
+			id: $selectedPawn.id,
+			position: targetPos
+		});
 	}
 
 	$: currentPawn = $pawns.find((p) => p.position[0] === tile.q && p.position[1] === tile.r);
 </script>
 
-{#await hexToPixel(tile.q, tile.r) then { x, y }}
-	<!-- svelte-ignore a11y_no_static_element_interactions -->
-	<!-- svelte-ignore a11y_click_events_have_key_events -->
-	<g
-		class="hex {tile.color}{$selectedPawn && isValidMove($selectedPawn.position, [tile.q, tile.r])
-			? ' valid-move'
-			: ''}"
-		transform="translate({x}, {y})"
-		style="pointer-events: all;"
-		on:click={handleTileClick}
-	>
-		<polygon
-			points={`
-                0,-${hexSize} 
-                ${hexWidth / 2},-${hexSize / 2} 
-                ${hexWidth / 2},${hexSize / 2} 
-                0,${hexSize} 
-                -${hexWidth / 2},${hexSize / 2} 
-                -${hexWidth / 2},-${hexSize / 2}
-            `}
-		/>
-		{#if tile.icon}
-			<TileIcon hex={tile} />
-		{/if}
-		{#if currentPawn}
-			<Pawn pawn={currentPawn} />
-		{/if}
-	</g>
-{/await}
+{#if $socket}
+	{#await hexToPixel(tile.q, tile.r) then { x, y }}
+		<!-- svelte-ignore a11y_no_static_element_interactions -->
+		<!-- svelte-ignore a11y_click_events_have_key_events -->
+		<g
+			on:load={() => {
+				isValidMove($selectedPawn!.position, [tile.q, tile.r]);
+			}}
+			class="hex {tile.color}{$selectedPawn && validMove ? ' valid-move' : ''}"
+			transform="translate({x}, {y})"
+			style="pointer-events: all;"
+			on:click={handleTileClick}
+		>
+			<polygon
+				points={`
+			0,-${hexSize} 
+			${hexWidth / 2},-${hexSize / 2} 
+			${hexWidth / 2},${hexSize / 2} 
+			0,${hexSize} 
+			-${hexWidth / 2},${hexSize / 2} 
+			-${hexWidth / 2},-${hexSize / 2}
+		`}
+			/>
+			{#if tile.icon}
+				<TileIcon hex={tile} />
+			{/if}
+			{#if currentPawn}
+				<Pawn pawn={currentPawn} />
+			{/if}
+		</g>
+	{/await}
+{/if}
 
 <style lang="scss">
 	.hex {

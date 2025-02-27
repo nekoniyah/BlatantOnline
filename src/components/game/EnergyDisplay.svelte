@@ -1,31 +1,37 @@
 <!-- src/components/game/EnergyDisplay.svelte -->
 <script lang="ts">
-	import { gameActions, gameStore } from '../../stores/gameStore';
+	import { gameStore } from '../../stores/gameStore';
 	import { selectedPawn } from '../../stores/pawnStore';
+	import { socket } from '../../stores/socket';
 
 	let currentPlayerEnergy = 0;
 	let currentPlayerName = '';
 
-	gameStore.subscribe((state) => {
-		if (state.players.length > 0) {
-			currentPlayerName = state.players[state.currentPlayer].name;
-			currentPlayerEnergy = state.players[state.currentPlayer].energy;
-		}
-	});
+	if ($gameStore.players.length > 0) {
+		currentPlayerName = $gameStore.players[$gameStore.currentPlayer].name;
+		currentPlayerEnergy = $gameStore.players[$gameStore.currentPlayer].energy;
+	}
 
 	function endTurn() {
 		selectedPawn.set(null);
-		gameActions.endTurn();
+		$socket!.emit('end_turn', currentPlayerName);
+
+		gameStore.update((state) => {
+			state.currentPlayer = state.currentPlayer === 0 ? 1 : 0;
+			return state;
+		});
 	}
 </script>
 
-<div class="energy-display">
-	<button class="end-turn-btn" on:click={endTurn}>End Turn</button>
-	<div class="energy">
-		<img src="/bolt.svg" alt="Energy" width="20" height="20" />
-		<span>Energy: {currentPlayerEnergy}</span>
+{#if $socket}
+	<div class="energy-display">
+		<button class="end-turn-btn" on:click={endTurn}>End Turn</button>
+		<div class="energy">
+			<img src="/bolt.svg" alt="Energy" width="20" height="20" />
+			<span>Energy: {currentPlayerEnergy}</span>
+		</div>
 	</div>
-</div>
+{/if}
 
 <style lang="scss">
 	.energy-display {

@@ -2,11 +2,12 @@
 <script lang="ts">
 	import { gameStore } from '../../stores/gameStore';
 	import CardComponent from './Card.svelte';
-	import { Card } from '$lib/lib';
 
-	let currentPlayerHand: Card[] = [];
+	let currentPlayerHand: any[] = [];
 
 	gameStore.subscribe((state) => {
+		if (!state) return;
+
 		if (state.players.length > 0) {
 			currentPlayerHand = state.players[state.currentPlayer].hand;
 		}
