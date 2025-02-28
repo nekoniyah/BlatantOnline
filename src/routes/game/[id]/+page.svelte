@@ -1,6 +1,6 @@
 <!-- src/routes/game/[id]/+page.svelte -->
 <script lang="ts">
-	import { onMount, onDestroy } from 'svelte';
+	import { onMount } from 'svelte';
 	import { fade, fly, slide } from 'svelte/transition';
 	import { page } from '$app/state';
 	import Navbar from '../../../components/common/Navbar.svelte';
@@ -13,7 +13,7 @@
 
 	// Room state
 	interface Room {
-		players: { id: string; name: string; ready: boolean; color: string }[];
+		players: { id: string; name: string; ready: boolean; color: string; energy: number }[];
 		pawns: { id: string; position: [number, number]; player: string }[];
 		currentPlayer: number;
 	}
@@ -26,7 +26,7 @@
 	const roomId = page.params.id;
 	let isLoading = true;
 	let gameStarted = false;
-	let players: { id: string; name: string; ready: boolean; color: string }[] = [];
+	let players: { id: string; name: string; ready: boolean; color: string; energy: number }[] = [];
 	let chatMessages: { sender: string; message: string; timestamp: Date }[] = [];
 	let currentMessage = '';
 
@@ -63,6 +63,7 @@
 		ready: boolean;
 		socketId: string;
 		color: string;
+		energy: number;
 	}
 
 	interface RoomData {
@@ -362,19 +363,7 @@
 						{/if}
 					</div>
 				{:else}
-					<div class="game-board">
-						<div class="turn-info">
-							<h3>Current Turn: {players[currentPlayer]?.name || 'Unknown'}</h3>
-							{#if players[currentPlayer]?.id === playerId}
-								<p>Moves Remaining: {remainingMoves}</p>
-								<button class="end-turn-btn" on:click={endTurn} disabled={remainingMoves > 0}>
-									End Turn
-								</button>
-							{/if}
-
-							<Board on:pawnClick={handlePawnClick} on:tileClick={handleTileClick} />
-						</div>
-					</div>
+					<Board />
 				{/if}
 			</div>
 
@@ -410,7 +399,15 @@
 
 				<div class="game-info">
 					<h3>Game Stats</h3>
-					<!-- Add game statistics here -->
+					<div class="turn-info">
+						<h3>Current Turn: {players[currentPlayer]?.name || 'Unknown'}</h3>
+						{#if players[currentPlayer]?.id === playerId}
+							<p>Moves Remaining: {remainingMoves}</p>
+							<button class="end-turn-btn" on:click={endTurn} disabled={remainingMoves > 0}>
+								End Turn
+							</button>
+						{/if}
+					</div>
 				</div>
 			</div>
 		</div>
@@ -418,15 +415,14 @@
 		<!-- Hand Component at the bottom -->
 		{#if gameStarted}
 			<div class="hand-wrapper gpu-accelerated" in:slide|local={{ duration: 300 }}>
-				<EnergyDisplay value={remainingMoves} />
-
+				<EnergyDisplay value={players[currentPlayer].energy || 0} />
 				<Hand isActive={players[currentPlayer]?.id === playerId} />
 			</div>
 		{/if}
 	{/if}
 </div>
 
-<style>
+<style lang="scss">
 	/* Base styles */
 	:global(body) {
 		overflow-x: hidden;
@@ -434,7 +430,6 @@
 	}
 
 	.game-container {
-		min-height: calc(100vh - 70px);
 		background-color: var(--color-tertiary);
 		background-image: radial-gradient(
 			circle at 50% 50%,
@@ -444,11 +439,13 @@
 		position: relative;
 		transform: translate3d(0, 0, 0);
 		will-change: transform;
+		height: calc(100vh - 70px);
+		width: 100%;
 	}
 
 	/* Loading screen */
 	.loading-screen {
-		height: 100%;
+		height: calc(100vh - 70px);
 		display: flex;
 		flex-direction: column;
 		align-items: center;
@@ -464,13 +461,13 @@
 	}
 
 	/* Layout */
-	.game-layout {
-		display: grid;
-		grid-template-columns: 300px 1fr 300px;
-		gap: 2rem;
-		padding: 2rem;
-		height: calc(100vh - 70px);
+	:global(.game-layout) {
+		display: flex;
+		gap: 1rem;
 		will-change: transform;
+		justify-content: space-around;
+		height: calc(100vh - 70px);
+		width: 100%;
 	}
 
 	/* Panels */
@@ -487,10 +484,12 @@
 		gap: 1.5rem;
 		will-change: transform;
 		transition: transform var(--transition-speed) var(--transition-timing);
+		height: calc(100vh - 70px);
+		width: 100%;
 	}
 
 	/* Hand wrapper */
-	.hand-wrapper {
+	:global(.hand-wrapper) {
 		position: fixed;
 		bottom: 0;
 		left: 0;
@@ -567,7 +566,6 @@
 	}
 
 	.chat-system {
-		flex: 1;
 		display: flex;
 		flex-direction: column;
 		gap: 1rem;
@@ -579,7 +577,6 @@
 	}
 
 	.chat-messages {
-		flex: 1;
 		overflow-y: auto;
 		padding: 1rem;
 		background: rgba(0, 0, 0, 0.2);
@@ -611,7 +608,6 @@
 	}
 
 	.chat-input input {
-		flex: 1;
 		padding: 0.5rem;
 		border: 1px solid var(--color-secondary-gold);
 		border-radius: 4px;
@@ -751,9 +747,7 @@
 
 	@media (max-width: 1200px) {
 		.game-layout {
-			grid-template-columns: 1fr;
-			grid-template-rows: auto 1fr auto;
-			height: auto;
+			display: flex;
 		}
 
 		.left-panel {
@@ -762,7 +756,6 @@
 
 		.main-area {
 			order: 1;
-			min-height: 500px;
 		}
 
 		.right-panel {
@@ -812,13 +805,6 @@
 
 	.chat-messages::-webkit-scrollbar-thumb:hover {
 		background: var(--color-secondary-red);
-	}
-
-	.game-board {
-		display: flex;
-		flex-direction: column;
-		gap: 1rem;
-		height: 100%;
 	}
 
 	.turn-info {

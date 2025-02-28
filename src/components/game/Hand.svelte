@@ -38,6 +38,7 @@
 	<div class="hand-header">
 		<h3>Your Hand</h3>
 		<button class="toggle-button" on:click={showCards} aria-label="Toggle hand">
+			<!-- svelte-ignore element_invalid_self_closing_tag -->
 			<div class="arrow" class:up={!hidden} />
 		</button>
 	</div>
@@ -55,7 +56,7 @@
 	.hand-container {
 		position: fixed;
 		bottom: 0;
-		width: 100%;
+		width: 100vw;
 		background-color: var(--color-tertiary);
 		border-top: 2px solid var(--color-secondary-gold);
 		box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.3);

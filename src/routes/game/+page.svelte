@@ -188,59 +188,28 @@
 				<!-- Loading screen -->
 				<div class="loading-screen" in:fade|local={{ duration: 300 }}>
 					<span class="loader"></span>
-					<p>Loading game room...</p>
 				</div>
 
-				<div class="pregame-screen">
-					<h2>Waiting for players... ({players.length}/2)</h2>
-					<div class="player-setup">
-						<input
-							type="text"
-							placeholder="Enter your name"
-							bind:value={playerName}
-							on:change={updatePlayerName}
-							disabled={isReady}
-						/>
-						<button
-							class="ready-btn"
-							class:is-ready={isReady}
-							on:click={handleReady}
-							disabled={!playerName}
-						>
-							{isReady ? 'Ready!' : 'Click when ready'}
-						</button>
-					</div>
-
-					<div class="players-list">
-						{#each players as player}
-							<div class="player-item" class:ready={player.ready}>
-								<span class="player-name">{player.name || 'Anonymous'}</span>
-								<span class="status">{player.ready ? '✓ Ready' : 'Not Ready'}</span>
-							</div>
-						{/each}
-					</div>
-
-					{#if players.length >= 2 && players.every((p) => p.ready)}
-						<button class="start-btn" on:click={startGame}>Start Game</button>
-					{/if}
-				</div>
+				{#if players.length >= 2 && players.every((p) => p.ready)}
+					<button class="start-btn" on:click={startGame}>Start Game</button>
+				{/if}
 			</div>
+		</div>
 
-			<div class="right-panel" in:fly={{ x: 50, duration: 500, delay: 300 }}>
-				<h2>How to Play</h2>
-				<div class="instructions">
-					<div class="step">
-						<span class="number">1</span>
-						<p>Create a new room or join an existing one using a Room ID</p>
-					</div>
-					<div class="step">
-						<span class="number">2</span>
-						<p>Share the Room ID with your friends to play together</p>
-					</div>
-					<div class="step">
-						<span class="number">3</span>
-						<p>Wait for all players to join and start the game</p>
-					</div>
+		<div class="right-panel" in:fly={{ x: 50, duration: 500, delay: 300 }}>
+			<h2>How to Play</h2>
+			<div class="instructions">
+				<div class="step">
+					<span class="number">1</span>
+					<p>Create a new room or join an existing one using a Room ID</p>
+				</div>
+				<div class="step">
+					<span class="number">2</span>
+					<p>Share the Room ID with your friends to play together</p>
+				</div>
+				<div class="step">
+					<span class="number">3</span>
+					<p>Wait for all players to join and start the game</p>
 				</div>
 			</div>
 		</div>
@@ -257,113 +226,6 @@
 			rgba(255, 215, 0, 0.1) 0%,
 			transparent 50%
 		);
-	}
-
-	.pregame-screen {
-		display: flex;
-		flex-direction: column;
-		gap: 1.5rem;
-
-		.player-setup {
-			display: flex;
-			flex-direction: column;
-			gap: 1rem;
-
-			input {
-				padding: 1rem;
-				border: 2px solid var(--color-secondary-gold);
-				border-radius: 8px;
-				background: rgba(15, 15, 15, 0.8);
-				color: var(--color-main);
-				font-size: 1.2rem;
-				text-align: center;
-			}
-		}
-
-		.players-list {
-			display: flex;
-			flex-direction: column;
-			gap: 0.5rem;
-		}
-
-		.ready-btn {
-			background: var(--color-secondary-gold);
-			color: var(--color-tertiary);
-			border: none;
-			border-radius: 8px;
-			padding: 1rem;
-			font-size: 1rem;
-			cursor: pointer;
-			transition: all 0.3s ease;
-
-			&.is-ready {
-				background: var(--color-main);
-				color: var(--color-tertiary);
-			}
-		}
-
-		.start-btn {
-			background: var(--color-secondary-gold);
-			color: var(--color-tertiary);
-			border: none;
-			border-radius: 8px;
-			padding: 1rem;
-			font-size: 1rem;
-			cursor: pointer;
-			transition: all 0.3s ease;
-		}
-
-		.start-btn:hover {
-			background: var(--color-main);
-			color: var(--color-tertiary);
-		}
-
-		.ready-btn:hover {
-			background: var(--color-main);
-			color: var(--color-tertiary);
-		}
-
-		.ready-btn:disabled {
-			opacity: 0.5;
-			cursor: not-allowed;
-		}
-
-		.start-btn:disabled {
-			opacity: 0.5;
-			cursor: not-allowed;
-		}
-
-		.instructions {
-			display: flex;
-			flex-direction: column;
-			gap: 1rem;
-			margin-top: 2rem;
-
-			.step {
-				display: flex;
-				gap: 1rem;
-				background: rgba(255, 215, 0, 0.1);
-				border-radius: 8px;
-				padding: 1rem;
-			}
-		}
-
-		.player-item {
-			display: flex;
-			justify-content: space-between;
-			background: rgba(255, 215, 0, 0.1);
-			border-radius: 8px;
-			padding: 1rem;
-			font-weight: bold;
-
-			.player-name {
-				color: var(--color-secondary-gold);
-			}
-
-			.status {
-				color: var(--color-main);
-			}
-		}
 	}
 
 	.content {
