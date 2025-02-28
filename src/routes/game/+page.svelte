@@ -259,6 +259,113 @@
 		);
 	}
 
+	.pregame-screen {
+		display: flex;
+		flex-direction: column;
+		gap: 1.5rem;
+
+		.player-setup {
+			display: flex;
+			flex-direction: column;
+			gap: 1rem;
+
+			input {
+				padding: 1rem;
+				border: 2px solid var(--color-secondary-gold);
+				border-radius: 8px;
+				background: rgba(15, 15, 15, 0.8);
+				color: var(--color-main);
+				font-size: 1.2rem;
+				text-align: center;
+			}
+		}
+
+		.players-list {
+			display: flex;
+			flex-direction: column;
+			gap: 0.5rem;
+		}
+
+		.ready-btn {
+			background: var(--color-secondary-gold);
+			color: var(--color-tertiary);
+			border: none;
+			border-radius: 8px;
+			padding: 1rem;
+			font-size: 1rem;
+			cursor: pointer;
+			transition: all 0.3s ease;
+
+			&.is-ready {
+				background: var(--color-main);
+				color: var(--color-tertiary);
+			}
+		}
+
+		.start-btn {
+			background: var(--color-secondary-gold);
+			color: var(--color-tertiary);
+			border: none;
+			border-radius: 8px;
+			padding: 1rem;
+			font-size: 1rem;
+			cursor: pointer;
+			transition: all 0.3s ease;
+		}
+
+		.start-btn:hover {
+			background: var(--color-main);
+			color: var(--color-tertiary);
+		}
+
+		.ready-btn:hover {
+			background: var(--color-main);
+			color: var(--color-tertiary);
+		}
+
+		.ready-btn:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+
+		.start-btn:disabled {
+			opacity: 0.5;
+			cursor: not-allowed;
+		}
+
+		.instructions {
+			display: flex;
+			flex-direction: column;
+			gap: 1rem;
+			margin-top: 2rem;
+
+			.step {
+				display: flex;
+				gap: 1rem;
+				background: rgba(255, 215, 0, 0.1);
+				border-radius: 8px;
+				padding: 1rem;
+			}
+		}
+
+		.player-item {
+			display: flex;
+			justify-content: space-between;
+			background: rgba(255, 215, 0, 0.1);
+			border-radius: 8px;
+			padding: 1rem;
+			font-weight: bold;
+
+			.player-name {
+				color: var(--color-secondary-gold);
+			}
+
+			.status {
+				color: var(--color-main);
+			}
+		}
+	}
+
 	.content {
 		max-width: 1400px;
 		margin: 0 auto;
@@ -298,7 +405,7 @@
 		}
 	}
 
-	.input-group {
+	:global(.input-group) {
 		position: relative;
 		width: 100%;
 		max-width: 300px;
@@ -348,7 +455,7 @@
 		margin-top: -1rem;
 	}
 
-	.buttons {
+	:global(.buttons) {
 		display: flex;
 		gap: 1rem;
 		width: 100%;
